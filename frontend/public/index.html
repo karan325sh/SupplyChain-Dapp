@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Tracking DApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.1/dist/ethers.umd.min.js" type="application/javascript"></script>
+    <script src="main.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2c2c2c;
+            --text-color: #e0e0e0;
+            --primary-color: #007bff; /* Blue for buttons/accents */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-color: #444;
+            --modal-bg: #3a3a3a;
+            --input-bg: #4a4a4a;
+            --input-border: #666;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #0d0d0d;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .navbar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+            font-size: 1em;
+            transition: color 0.3s ease;
+        }
+
+        .navbar .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .navbar .connect-wallet-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar .connect-wallet-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Main Content */
+        .container {
+            flex-grow: 1;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer; /* Indicate interactivity */
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .card-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+
+        .card-description {
+            font-size: 0.9em;
+            color: #bbb;
+        }
+
+        .section-header {
+            text-align: center;
+            font-size: 2.8em;
+            color: var(--text-color);
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        /* Notification Area */
+        #mainNotification {
+            text-align: center;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+            border-radius: 8px;
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modals */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+            width: 90%;
+            max-width: 500px;
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--text-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            color: var(--text-color);
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #ccc;
+            text-align: left;
+        }
+
+        .modal-body input[type="text"],
+        .modal-body input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 12px 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .modal-body input[type="text"]::placeholder,
+        .modal-body input[type="number"]::placeholder {
+            color: #999;
+        }
+
+        .modal-body button {
+            background-color: var(--success-color);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .modal-body button:hover {
+            background-color: #218838;
+        }
+
+        .modal-feedback {
+            margin-top: 20px;
+            font-size: 0.95em;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        /* Product Details Modal Specifics */
+        #getProductDetailsModal .modal-feedback {
+            text-align: left;
+            margin-top: 10px;
+            color: var(--text-color);
+        }
+        #getProductDetailsModal .modal-feedback p {
+            margin: 5px 0;
+            color: #ccc;
+        }
+        #getProductDetailsModal .modal-feedback span {
+            font-weight: normal;
+            color: var(--text-color);
+        }
+        #getProductDetailsModal .modal-feedback strong {
+            color: #eee;
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 20px;
+            }
+            .navbar .nav-links {
+                margin-top: 10px;
+            }
+            .navbar .nav-links a {
+                margin-left: 0;
+                margin-right: 15px;
+            }
+            .navbar .connect-wallet-btn {
+                width: 100%;
+                margin-top: 15px;
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .section-header {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">Piu</div>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Services</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Erc20</a>
+        </div>
+        <button class="connect-wallet-btn" onclick="connectMetamask()">Connect Wallet</button>
+    </div>
+
+    <div class="container">
+        <h1 class="section-header">Supply Chain Tracking Dashboard</h1>
+
+        <div id="mainNotification">Please connect your Metamask wallet.</div>
+
+        <div class="dashboard-grid">
+            <div class="card" onclick="openModal('manufactureProductModal')">
+                <div class="card-title">MANUFACTURE PRODUCT</div>
+                <div class="card-description">Create a new product on the blockchain.</div>
+            </div>
+
+            <div class="card" onclick="openModal('setParticipantsModal')">
+                <div class="card-title">SET PARTICIPANTS</div>
+                <div class="card-description">Assign distributor and retailer to a product.</div>
+            </div>
+
+            <div class="card" onclick="openModal('shipProductModal')">
+                <div class="card-title">SHIP PRODUCT</div>
+                <div class="card-description">Initiate shipment by the distributor.</div>
+            </div>
+
+            <div class="card" onclick="openModal('receiveProductModal')">
+                <div class="card-title">RECEIVE SHIPMENT</div>
+                <div class="card-description">Confirm reception of a product by the retailer.</div>
+            </div>
+
+            <div class="card" onclick="openModal('sellProductModal')">
+                <div class="card-title">SELL PRODUCT</div>
+                <div class="card-description">Mark a product as sold by the retailer.</div>
+            </div>
+
+            <div class="card" onclick="openModal('getProductDetailsModal')">
+                <div class="card-title">GET PRODUCT DETAILS</div>
+                <div class="card-description">Retrieve all information about a product.</div>
+            </div>
+
+            </div>
+    </div>
+
+    <div id="manufactureProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('manufactureProductModal')">&times;</span>
+            <h2 class="modal-title">Manufacture New Product</h2>
+            <div class="modal-body">
+                <label for="modalManufactureName">Product Name:</label>
+                <input type="text" id="modalManufactureName" placeholder="e.g., Laptop Model X">
+                <button onclick="manufactureProductUI()">Manufacture Product</button>
+                <p id="manufactureFeedback" class="modal-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="setParticipantsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('setParticipantsModal')">&times;</span>
+            <h2 class="modal-title">Set Participants for Product</h2>
+            <div class="modal-body">
+                <label for="modalSetParticipantsId">Product ID:</label>
+                <input type="number" id="modalSetParticipantsId" placeholder="e.g., 1">
+                <label for="modalDistributorAddress">Distributor Address:</label>
+                <input type="text" id="modalDistributorAddress" placeholder="0x...">
+                <label for="modalRetailerAddress">Retailer Address:</label>
+                <input type="text" id="modalRetailerAddress" placeholder="0x...">
+                <button onclick="setParticipantsUI()">Set Participants</button>
+                <p id="setParticipantsFeedback" class="modal-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="shipProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('shipProductModal')">&times;</span>
+            <h2 class="modal-title">Ship Product</h2>
+            <div class="modal-body">
+                <label for="modalShipProductId">Product ID to Ship:</label>
+                <input type="number" id="modalShipProductId" placeholder="e.g., 1">
+                <button onclick="shipProductUI()">Ship Product</button>
+                <p id="shipFeedback" class="modal-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="receiveProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('receiveProductModal')">&times;</span>
+            <h2 class="modal-title">Receive Shipment</h2>
+            <div class="modal-body">
+                <label for="modalReceiveProductId">Product ID to Receive:</label>
+                <input type="number" id="modalReceiveProductId" placeholder="e.g., 1">
+                <button onclick="receiveProductUI()">Receive Product</button>
+                <p id="receiveFeedback" class="modal-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="sellProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('sellProductModal')">&times;</span>
+            <h2 class="modal-title">Sell Product</h2>
+            <div class="modal-body">
+                <label for="modalSellProductId">Product ID to Sell:</label>
+                <input type="number" id="modalSellProductId" placeholder="e.g., 1">
+                <button onclick="sellProductUI()">Sell Product</button>
+                <p id="sellFeedback" class="modal-feedback"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="getProductDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('getProductDetailsModal')">&times;</span>
+            <h2 class="modal-title">Get Product Details</h2>
+            <div class="modal-body">
+                <label for="modalGetProductId">Product ID:</label>
+                <input type="number" id="modalGetProductId" placeholder="e.g., 1">
+                <button onclick="getProductUI()">Get Product Info</button>
+                <p id="getProductFeedback" class="modal-feedback">
+                    <p><strong>ID:</strong> <span id="displayId"></span></p>
+                    <p><strong>Name:</strong> <span id="displayName"></span></p>
+                    <p><strong>Manufacturer:</strong> <span id="displayManufacturer"></span></p>
+                    <p><strong>Distributor:</strong> <span id="displayDistributor"></span></p>
+                    <p><strong>Retailer:</strong> <span id="displayRetailer"></span></p>
+                    <p><strong>Current Owner:</strong> <span id="displayCurrentOwner"></span></p>
+                    <p><strong>Current State:</strong> <span id="displayCurrentState"></span></p>
+                    <p><strong>Timestamp:</strong> <span id="displayTimestamp"></span></p>
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
